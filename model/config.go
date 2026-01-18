@@ -52,7 +52,16 @@ type AgentConfig struct {
 	MemTotal        uint64 `koanf:"memtotal" json:"memtotal"`
 	DiskMultiple    uint64 `koanf:"diskmultiple" json:"diskmultiple"`
 	MemMultiple     uint64 `koanf:"memmultiple" json:"memmultiple"`
+	// NetworkMultiple is legacy config (applies to both upload/download).
+	// Prefer NetworkUploadMultiple / NetworkDownloadMultiple.
 	NetworkMultiple uint64 `koanf:"networkmultiple" json:"networkmultiple"`
+	// Separate upload/download multipliers for reported transfer/speed.
+	NetworkUploadMultiple   uint64 `koanf:"network_upload_multiple" json:"network_upload_multiple"`
+	NetworkDownloadMultiple uint64 `koanf:"network_download_multiple" json:"network_download_multiple"`
+	// Optional base offsets (bytes) added to reported cumulative transfer.
+	// This lets you "set total upload/download" to a desired starting value.
+	NetworkUploadTotal   uint64 `koanf:"network_upload_total" json:"network_upload_total"`
+	NetworkDownloadTotal uint64 `koanf:"network_download_total" json:"network_download_total"`
 	CPU             string `koanf:"cpu" json:"cpu"`
 	FakeIP          string `koanf:"ip" json:"ip"`
 
@@ -85,6 +94,17 @@ func (c *AgentConfig) Read(path string) error {
 	err = c.k.Unmarshal("", c)
 	if err != nil {
 		return err
+	}
+
+	// Backward compatible mapping:
+	// if legacy `networkmultiple` is set but new split fields are not, apply it to both.
+	if c.NetworkMultiple > 0 {
+		if c.NetworkUploadMultiple == 0 {
+			c.NetworkUploadMultiple = c.NetworkMultiple
+		}
+		if c.NetworkDownloadMultiple == 0 {
+			c.NetworkDownloadMultiple = c.NetworkMultiple
+		}
 	}
 
 	if c.ReportDelay == 0 {

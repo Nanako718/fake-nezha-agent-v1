@@ -212,9 +212,20 @@ func GetState(skipConnectionCount bool, skipProcsCount bool) *model.HostState {
 
 	// ret.NetInTransfer, ret.NetOutTransfer = netInTransfer, netOutTransfer
 	// ret.NetInSpeed, ret.NetOutSpeed = netInSpeed, netOutSpeed
-	if agentConfig.Fake && agentConfig.NetworkMultiple > 0 {
-		ret.NetInTransfer, ret.NetOutTransfer = netInTransfer*agentConfig.NetworkMultiple, netOutTransfer*agentConfig.NetworkMultiple
-		ret.NetInSpeed, ret.NetOutSpeed = netInSpeed*agentConfig.NetworkMultiple, netOutSpeed*agentConfig.NetworkMultiple
+	if agentConfig.Fake {
+		// NetIn = download (BytesRecv), NetOut = upload (BytesSent)
+		downMulti := agentConfig.NetworkDownloadMultiple
+		upMulti := agentConfig.NetworkUploadMultiple
+		if downMulti == 0 {
+			downMulti = 1
+		}
+		if upMulti == 0 {
+			upMulti = 1
+		}
+		ret.NetInTransfer = netInTransfer*downMulti + agentConfig.NetworkDownloadTotal
+		ret.NetOutTransfer = netOutTransfer*upMulti + agentConfig.NetworkUploadTotal
+		ret.NetInSpeed = netInSpeed * downMulti
+		ret.NetOutSpeed = netOutSpeed * upMulti
 	} else {
 		ret.NetInTransfer, ret.NetOutTransfer = netInTransfer, netOutTransfer
 		ret.NetInSpeed, ret.NetOutSpeed = netInSpeed, netOutSpeed

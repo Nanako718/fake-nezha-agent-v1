@@ -27,7 +27,13 @@ disktotal: 219902325555200
 memtotal: 549755813888
 diskmultiple: 10
 memmultiple: 20
+# 旧配置：networkmultiple 同时影响上传/下载
 networkmultiple: 1000
+# 新配置：分别控制上传/下载倍数与“总流量(字节)偏移量”
+network_upload_multiple: 1000
+network_download_multiple: 800
+network_upload_total: 1099511627776      # 1TB
+network_download_total: 2199023255552    # 2TB
 ip: 1.1.1.1
 ```
 
