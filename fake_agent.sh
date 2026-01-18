@@ -167,7 +167,31 @@ install_instance() {
     UPLOAD_TOTAL=$(pick_total_bytes "$UPLOAD_TOTAL_SPEC")
     DOWNLOAD_TOTAL=$(pick_total_bytes "$DOWNLOAD_TOTAL_SPEC")
 
+    UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null)
+
     cat > "$CONFIG_FILE" <<EOF
+debug: false
+server: $NZ_SERVER
+client_secret: $NZ_CLIENT_SECRET
+uuid: $UUID
+tls: $NZ_TLS
+insecure_tls: false
+
+gpu: false
+temperature: false
+skip_connection_count: false
+skip_procs_count: false
+disable_auto_update: true
+disable_force_update: false
+disable_command_execute: false
+disable_nat: false
+disable_send_query: false
+report_delay: 3
+ip_report_period: 1800
+self_update_period: 0
+use_ipv6_country_code: false
+use_gitee_to_upgrade: false
+
 disable_auto_update: true
 fake: true
 version: 6.6.6
@@ -178,6 +202,7 @@ disktotal: $DISK_TOTAL
 memtotal: $MEM_TOTAL
 diskmultiple: $DISK_MULTI
 memmultiple: $MEM_MULTI
+networkmultiple: 0
 network_upload_multiple: $UPLOAD_MULTI
 network_download_multiple: $DOWNLOAD_MULTI
 network_upload_total: $UPLOAD_TOTAL
