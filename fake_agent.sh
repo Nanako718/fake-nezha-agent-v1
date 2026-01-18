@@ -32,7 +32,9 @@ detect_arch() {
         *arm*) arch="arm";;
         *) err "不支持架构: $(uname -m)"; exit 1;;
     esac
-    AGENT_URL="https://gh-proxy.com/https://github.com/dysf888/fake-nezha-agent-v1/releases/latest/download/nezha-agent-fake_linux_amd64.zip"
+    # Download from your own fork's release assets (built by .github/workflows/agent.yml)
+    # Asset name format: nezha-agent-fake_${GOOS}_${GOARCH}.zip
+    AGENT_URL="https://gh-proxy.com/https://github.com/Nanako718/fake-nezha-agent-v1/releases/latest/download/nezha-agent-fake_${os}_${arch}.zip"
 }
 
 parse_install_cmd() {
