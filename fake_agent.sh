@@ -140,6 +140,58 @@ cleanup_instance() {
     systemctl daemon-reload >/dev/null 2>&1
 }
 
+find_max_instance_idx() {
+    local max=0
+    local d base n
+    for d in /opt/nezha-fake-*; do
+        [[ -d "$d" ]] || continue
+        base="$(basename "$d")"
+        n="${base#nezha-fake-}"
+        [[ "$n" =~ ^[0-9]+$ ]] || continue
+        (( n > max )) && max="$n"
+    done
+    # fallback to systemd units if /opt is empty
+    if [[ "$max" -eq 0 ]]; then
+        for d in /etc/systemd/system/nezha-fake-agent-*.service; do
+            [[ -f "$d" ]] || continue
+            base="$(basename "$d")"
+            n="${base#nezha-fake-agent-}"
+            n="${n%.service}"
+            [[ "$n" =~ ^[0-9]+$ ]] || continue
+            (( n > max )) && max="$n"
+        done
+    fi
+    echo "$max"
+}
+
+install_instances_batch() {
+    local count="$1"
+    local mode="$2" # append|overwrite
+    local start idx end max
+
+    max="$(find_max_instance_idx)"
+    if [[ "$mode" == "overwrite" ]]; then
+        start=1
+    else
+        start=$((max + 1))
+    fi
+    end=$((start + count - 1))
+
+    info "将安装 $count 个实例：编号 $start - $end (当前最大编号: $max, 模式: $mode)"
+    for idx in $(seq "$start" "$end"); do
+        if [[ "$mode" == "overwrite" ]]; then
+            cleanup_instance "$idx"
+        else
+            # append mode: if idx already exists (rare), skip to be safe
+            if [[ -d "/opt/nezha-fake-$idx" || -f "/etc/systemd/system/nezha-fake-agent-$idx.service" ]]; then
+                err "实例 $idx 已存在，跳过（如需覆盖请用覆盖模式）"
+                continue
+            fi
+        fi
+        install_instance "$idx"
+    done
+}
+
 install_instance() {
     local idx=$1
     INSTALL_PATH="/opt/nezha-fake-$idx"
@@ -371,11 +423,14 @@ main() {
             read -rp "请输入总上传流量(GB 或 min-max，直接回车=随机): " UPLOAD_TOTAL_SPEC
             read -rp "请输入总下载流量(GB 或 min-max，直接回车=随机): " DOWNLOAD_TOTAL_SPEC
             read -rp "请输入要生成实例数量 (N): " N
-            for i in $(seq 1 $N); do
-                cleanup_instance $i
-                install_instance $i
-            done
-            success "全部 $N 个实例安装完成！"
+            read -rp "安装模式：1) 追加安装(推荐)  2) 覆盖重装(从1开始覆盖) [1/2]: " mode_sel
+            if [[ "$mode_sel" == "2" ]]; then
+                install_instances_batch "$N" "overwrite"
+                success "覆盖重装完成！"
+            else
+                install_instances_batch "$N" "append"
+                success "追加安装完成！"
+            fi
             ;;
         2) uninstall_all ;;
         3) show_status_all ;;
